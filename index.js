@@ -10,38 +10,68 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Connect DB (safe for Vercel)
 initializeDatabase();
 
+// Health check
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
+// GET all students
 app.get("/students", async (req, res) => {
-  const students = await Student.find();
-  res.json(students);
+  try {
+    const students = await Student.find();
+    res.status(200).json(students);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch students" });
+  }
 });
 
+// ADD student
 app.post("/students", async (req, res) => {
-  const student = new Student(req.body);
-  await student.save();
-  res.status(201).json(student);
+  try {
+    const student = new Student(req.body);
+    await student.save();
+    res.status(201).json(student);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add student" });
+  }
 });
 
+// UPDATE student
 app.put("/students/:id", async (req, res) => {
-  const updatedStudent = await Student.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(updatedStudent);
+  try {
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updatedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.status(200).json(updatedStudent);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update student" });
+  }
 });
 
+// DELETE student
 app.delete("/students/:id", async (req, res) => {
-  await Student.findByIdAndDelete(req.params.id);
-  res.json({ message: "Student deleted" });
+  try {
+    const deletedStudent = await Student.findByIdAndDelete(req.params.id);
+
+    if (!deletedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.status(200).json({ message: "Student deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete student" });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
-);
+// 🚀 EXPORT APP (NO LISTEN)
+module.exports = app;
