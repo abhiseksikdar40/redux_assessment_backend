@@ -10,10 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect DB (safe for Vercel)
+// Connect DB
 initializeDatabase();
 
-// Health check
+
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
@@ -73,5 +73,33 @@ app.delete("/students/:id", async (req, res) => {
   }
 });
 
-// 🚀 EXPORT APP (NO LISTEN)
+// CLASS VIEW API 
+app.get("/classes", async (req, res) => {
+  try {
+    const { gender, sortBy } = req.query;
+
+    let filterQuery = {};
+    if (gender && gender !== "All") {
+      filterQuery.gender = gender;
+    }
+
+    let sortQuery = {};
+    if (sortBy === "name") {
+      sortQuery.name = 1;
+    } else if (sortBy === "marks") {
+      sortQuery.marks = -1;
+    } else if (sortBy === "attendance") {
+      sortQuery.attendance = -1;
+    }
+
+    const students = await Student.find(filterQuery).sort(sortQuery);
+
+    res.status(200).json(students);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch class view data" });
+  }
+});
+
+
+// EXPORT APP
 module.exports = app;
